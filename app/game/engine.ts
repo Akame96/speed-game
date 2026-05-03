@@ -7,6 +7,7 @@ export interface GameConfig {
 
 export class GameSession {
   level = 1
+  unlockedLevels = 1
   totalScore = 0
   highScore = 0
   
@@ -17,6 +18,7 @@ export class GameSession {
   constructor() {
     if (typeof window !== 'undefined') {
       this.highScore = parseInt(localStorage.getItem('highScore') || '0')
+      this.unlockedLevels = parseInt(localStorage.getItem('unlockedLevels') || '1')
     }
   }
 
@@ -30,10 +32,22 @@ export class GameSession {
     }
   }
 
+  setLevel(l: number) {
+    if (l <= this.unlockedLevels) {
+      this.level = l
+    }
+  }
+
   checkLevelUp(currentScore: number): boolean {
     const target = this.levelThresholds[this.level - 1]
     if (currentScore >= target && this.level < 10) {
       this.level += 1
+      if (this.level > this.unlockedLevels) {
+        this.unlockedLevels = this.level
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('unlockedLevels', this.unlockedLevels.toString())
+        }
+      }
       return true
     }
     return false

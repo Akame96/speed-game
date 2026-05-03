@@ -28,6 +28,7 @@ export const createGame = async (
     scene: {
       create(this: any) {
         let score = 0
+        let isGameOver = false
         let isLevelEnding = false
         const lanes = [75, 150, 225]
         let currentLane = 1
@@ -43,9 +44,9 @@ export const createGame = async (
           curbs.add(this.add.rectangle(265, i * 30, 10, 30, color).setOrigin(0.5))
         }
 
-        const graphics = this.add.graphics()
-        graphics.fillStyle(0x333333, 1)
-        graphics.fillRect(40, 0, 220, 500)
+        const roadGraphics = this.add.graphics()
+        roadGraphics.fillStyle(0x333333, 1)
+        roadGraphics.fillRect(40, 0, 220, 500)
 
         const roadLines = this.add.group()
         for (let i = 0; i < 12; i++) {
@@ -69,13 +70,47 @@ export const createGame = async (
         playerContainer.add([w1, w2, w3, w4, body, hood, windshield, spoiler])
         this.physics.add.existing(playerContainer)
         // @ts-ignore
-        playerContainer.body.setSize(40, 70)
+        playerContainer.body.setSize(38, 65)
 
         const obstacles = this.physics.add.group()
 
-        // --- MOVIMENTO FUNZIONE ---
+        // --- SPAWN LOGIC ---
+        const spawnObstacle = () => {
+          if (isLevelEnding || isGameOver) return
+          
+          const lane = Phaser.Math.Between(0, 2)
+          const type = Phaser.Math.Between(0, 1)
+          const obsContainer = this.add.container(lanes[lane], -100)
+          
+          let h = 70
+          if (type === 0) {
+            const oBody = this.add.rectangle(0, 0, 42, 75, 0xff3333).setOrigin(0.5)
+            const oWind = this.add.rectangle(0, -5, 34, 12, 0x333333).setOrigin(0.5)
+            obsContainer.add([oBody, oWind])
+          } else {
+            h = 100
+            const oBody = this.add.rectangle(0, 0, 45, 110, 0xff8800).setOrigin(0.5)
+            const oCab = this.add.rectangle(0, -40, 40, 25, 0xcc6600).setOrigin(0.5)
+            obsContainer.add([oBody, oCab])
+          }
+
+          this.physics.add.existing(obsContainer)
+          // @ts-ignore
+          obsContainer.body.setSize(38, h)
+          // @ts-ignore
+          obsContainer.body.setVelocityY(config.speed)
+          obstacles.add(obsContainer)
+        }
+
+        const spawnTimer = this.time.addEvent({
+          delay: config.spawnRate,
+          loop: true,
+          callback: spawnObstacle
+        })
+
+        // --- MOVIMENTO ---
         const movePlayer = (direction: 'left' | 'right') => {
-          if (isLevelEnding) return
+          if (isLevelEnding || isGameOver) return
           if (direction === 'left') {
             currentLane = Math.max(0, currentLane - 1)
           } else {
@@ -89,57 +124,16 @@ export const createGame = async (
           })
         }
 
-        // --- INPUT TASTIERA ---
-        const cursors = this.input.keyboard.createCursorKeys()
         this.input.keyboard.on('keydown-LEFT', () => movePlayer('left'))
         this.input.keyboard.on('keydown-RIGHT', () => movePlayer('right'))
         this.input.keyboard.on('keydown-A', () => movePlayer('left'))
         this.input.keyboard.on('keydown-D', () => movePlayer('right'))
-
-        // --- SPAWN ---
-        const spawnObstacle = () => {
-          if (isLevelEnding) return
-          const lane = Phaser.Math.Between(0, 2)
-          const type = Phaser.Math.Between(0, 1)
-          const obsContainer = this.add.container(lanes[lane], -100)
-          
-          let h = 75
-          if (type === 0) {
-            const oBody = this.add.rectangle(0, 0, 42, 75, 0xff3333).setOrigin(0.5)
-            const oWind = this.add.rectangle(0, -5, 34, 12, 0x333333).setOrigin(0.5)
-            obsContainer.add([oBody, oWind])
-          } else {
-            h = 110
-            const oBody = this.add.rectangle(0, 0, 45, 110, 0xff8800).setOrigin(0.5)
-            const oCab = this.add.rectangle(0, -40, 40, 25, 0xcc6600).setOrigin(0.5)
-            obsContainer.add([oBody, oCab])
-          }
-
-          this.physics.add.existing(obsContainer)
-          // @ts-ignore
-          obsContainer.body.setSize(40, h)
-          // @ts-ignore
-          obsContainer.body.setVelocityY(config.speed)
-          obstacles.add(obsContainer)
-        }
-
-        this.time.addEvent({
-          delay: config.spawnRate,
-          loop: true,
-          callback: spawnObstacle
-        })
-
-        // --- INPUT MOUSE ---
-        this.input.on('pointerdown', (pointer: any) => {
-          if (pointer.x < 150) {
-            movePlayer('left')
-          } else {
-            movePlayer('right')
-          }
-        })
+        this.input.on('pointerdown', (p: any) => p.x < 150 ? movePlayer('left') : movePlayer('right'))
 
         // --- UPDATE ---
         this.events.on('update', () => {
+          if (isGameOver) return
+
           const scrollSpeed = isLevelEnding ? config.speed / 20 : config.speed / 60
           roadLines.getChildren().forEach((line: any) => {
             line.y += scrollSpeed
@@ -152,6 +146,7 @@ export const createGame = async (
 
           if (score >= config.targetScore && !isLevelEnding) {
             isLevelEnding = true
+            spawnTimer.destroy()
             this.physics.pause()
             this.cameras.main.flash(500, 255, 255, 255)
             this.tweens.add({
@@ -159,9 +154,7 @@ export const createGame = async (
               y: -200,
               duration: 1500,
               ease: 'Power2.easeIn',
-              onComplete: () => {
-                onLevelComplete(score)
-              }
+              onComplete: () => onLevelComplete(score)
             })
           }
 
@@ -172,14 +165,14 @@ export const createGame = async (
 
         // --- COLLISION ---
         this.physics.add.overlap(playerContainer, obstacles, () => {
-          if (isLevelEnding) return
+          if (isLevelEnding || isGameOver) return
+          isGameOver = true
           this.physics.pause()
-          this.cameras.main.shake(250, 0.03)
+          this.cameras.main.shake(300, 0.04)
           this.cameras.main.flash(200, 255, 0, 0)
-          this.time.delayedCall(300, () => {
+          
+          this.time.delayedCall(500, () => {
             onGameOver(score)
-            this.scene.restart()
-            this.physics.resume()
           })
         })
 
@@ -188,7 +181,7 @@ export const createGame = async (
           delay: 100,
           loop: true,
           callback: () => {
-            if (!isLevelEnding) {
+            if (!isLevelEnding && !isGameOver) {
               score += 10
               onScore(score)
             }

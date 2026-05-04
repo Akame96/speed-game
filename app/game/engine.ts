@@ -12,7 +12,7 @@ export class GameSession {
   highScore = 0
   
   private levelThresholds = [
-    500, 1200, 2000, 3000, 4200, 5500, 7000, 8800, 11000, 15000
+    3000, 7000, 12000, 18000, 25000, 35000, 48000, 65000, 85000, 110000
   ]
 
   constructor() {
@@ -26,8 +26,8 @@ export class GameSession {
     const target = this.levelThresholds[this.level - 1] || 999999
     return {
       level: this.level,
-      speed: 250 + (this.level - 1) * 70,
-      spawnRate: Math.max(1200 - (this.level - 1) * 120, 300),
+      speed: 300 + (this.level - 1) * 80,
+      spawnRate: Math.max(1200 - (this.level - 1) * 100, 400),
       targetScore: target
     }
   }

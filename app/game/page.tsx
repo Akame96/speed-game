@@ -139,14 +139,14 @@ export default function GamePage() {
 
       <div className="flex-1 flex flex-col md:flex-row gap-4 min-h-0 relative">
         
-        {/* LEVEL SELECTOR SIDEBAR */}
+        {/* LEVEL SELECTOR SIDEBAR (ROUNDED FLOATING PANEL) */}
         {showLevelSelector && (
-          <div className="absolute left-0 top-0 bottom-0 w-64 bg-zinc-900/95 backdrop-blur-xl z-50 border-r border-zinc-800 p-6 flex flex-col gap-4 animate-in slide-in-from-left duration-300">
+          <div className="absolute left-4 top-4 bottom-4 w-64 bg-zinc-900/95 backdrop-blur-xl z-50 border border-zinc-800 p-6 flex flex-col gap-4 animate-in slide-in-from-left duration-300 rounded-[2.5rem] shadow-2xl overflow-hidden">
             <div className="flex justify-between items-center mb-2 text-nowrap">
               <h3 className="font-black uppercase tracking-tighter text-zinc-400">Livelli Sbloccati</h3>
-              <button onClick={() => setShowLevelSelector(false)} className="text-zinc-600 hover:text-white px-2">✕</button>
+              <button onClick={() => setShowLevelSelector(false)} className="text-zinc-600 hover:text-white px-2 text-xl">✕</button>
             </div>
-            <div className="grid grid-cols-2 gap-3 overflow-y-auto pr-2">
+            <div className="grid grid-cols-2 gap-3 overflow-y-auto pr-2 custom-scrollbar">
               {[...Array(10)].map((_, i) => {
                 const l = i + 1
                 const isUnlocked = l <= unlockedLevels
@@ -173,11 +173,9 @@ export default function GamePage() {
           </div>
         )}
 
-        {/* GAME AREA */}
-        <div className="flex-1 min-h-0 flex items-center justify-center relative bg-zinc-900/30 rounded-[3rem] border border-zinc-800/50 shadow-inner">
-          <div className="h-full w-full max-w-[1000px] flex items-center justify-center p-4">
-             <div id="game-container" className="h-full w-full rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.6)] border-4 border-zinc-800 bg-[#1a1a1a]" />
-          </div>
+        {/* GAME AREA (FULL SPACE) */}
+        <div className="flex-1 min-h-0 flex items-center justify-center relative bg-zinc-900/30 rounded-[3rem] border border-zinc-800/50 shadow-inner overflow-hidden">
+             <div id="game-container" className="h-full w-full bg-[#0a0a0a]" />
 
           {/* OVERLAYS */}
           {showGameOverModal && (

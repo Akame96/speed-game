@@ -14,7 +14,7 @@ export const createGame = async (
     width: 800,
     height: 1200,
     parent: containerId,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#0a0a0a',
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH
@@ -35,42 +35,90 @@ export const createGame = async (
         let currentLane = 1
 
         const DEPTH = {
-          GRASS: 1,
-          ROAD: 2,
-          LINES: 3,
+          SHADOW: 1,
+          GRASS: 2,
+          TREES: 3,
+          ROAD: 4,
+          CURBS: 5,
+          LINES: 6,
           OBSTACLES: 50,
           PLAYER: 100
         }
 
-        // --- BACKGROUND ---
-        this.add.rectangle(0, 0, 100, 1200, 0x2d5a27).setOrigin(0).setDepth(DEPTH.GRASS)
-        this.add.rectangle(700, 0, 100, 1200, 0x2d5a27).setOrigin(0).setDepth(DEPTH.GRASS)
+        // --- BACKGROUND / GRASS ---
+        this.add.rectangle(0, 0, 100, 1200, 0x1a4a1a).setOrigin(0).setDepth(DEPTH.GRASS)
+        this.add.rectangle(700, 0, 100, 1200, 0x1a4a1a).setOrigin(0).setDepth(DEPTH.GRASS)
         
-        const curbs = this.add.group()
-        for (let i = 0; i < 20; i++) {
-          const color = i % 2 === 0 ? 0xffffff : 0xff0000
-          curbs.add(this.add.rectangle(90, i * 80, 25, 80, color).setOrigin(0.5).setDepth(DEPTH.ROAD))
-          curbs.add(this.add.rectangle(710, i * 80, 25, 80, color).setOrigin(0.5).setDepth(DEPTH.ROAD))
+        // --- MOVING SCENERY (TREES) ---
+        const trees = this.add.group()
+        for (let i = 0; i < 8; i++) {
+          const x = i % 2 === 0 ? 40 : 760
+          const tree = this.add.circle(x, i * 200, 30 + Math.random() * 20, 0x0d2b0d).setDepth(DEPTH.TREES)
+          trees.add(tree)
         }
 
-        this.add.rectangle(400, 600, 600, 1200, 0x333333).setDepth(DEPTH.ROAD)
+        // --- ROAD ---
+        this.add.rectangle(400, 600, 600, 1200, 0x222222).setDepth(DEPTH.ROAD)
+        
+        // --- CURBS ---
+        const curbs = this.add.group()
+        for (let i = 0; i < 30; i++) {
+          const color = i % 2 === 0 ? 0xdddddd : 0xcc0000
+          curbs.add(this.add.rectangle(95, i * 40, 10, 40, color).setOrigin(0.5).setDepth(DEPTH.CURBS))
+          curbs.add(this.add.rectangle(705, i * 40, 10, 40, color).setOrigin(0.5).setDepth(DEPTH.CURBS))
+        }
 
         const roadLines = this.add.group()
-        for (let i = 0; i < 12; i++) {
-          const l1 = this.add.rectangle(300, i * 120, 10, 60, 0xffffff, 0.4).setDepth(DEPTH.LINES)
-          const l2 = this.add.rectangle(500, i * 120, 10, 60, 0xffffff, 0.4).setDepth(DEPTH.LINES)
+        for (let i = 0; i < 15; i++) {
+          const l1 = this.add.rectangle(300, i * 100, 6, 40, 0xffffff, 0.2).setDepth(DEPTH.LINES)
+          const l2 = this.add.rectangle(500, i * 100, 6, 40, 0xffffff, 0.2).setDepth(DEPTH.LINES)
           roadLines.add(l1)
           roadLines.add(l2)
+        }
+
+        // --- HELPER TO CREATE CAR VISUALS ---
+        const createCarContainer = (scene: any, color: number, isPlayer: boolean = false) => {
+          const container = scene.add.container(0, 0)
+          
+          // Shadow
+          const shadow = scene.add.rectangle(5, 5, 115, 200, 0x000000, 0.3).setOrigin(0.5)
+          
+          // Wheels
+          const w1 = scene.add.rectangle(-55, -70, 15, 35, 0x111111).setOrigin(0.5)
+          const w2 = scene.add.rectangle(55, -70, 15, 35, 0x111111).setOrigin(0.5)
+          const w3 = scene.add.rectangle(-55, 70, 15, 35, 0x111111).setOrigin(0.5)
+          const w4 = scene.add.rectangle(55, 70, 15, 35, 0x111111).setOrigin(0.5)
+          
+          // Body
+          const body = scene.add.rectangle(0, 0, 110, 190, color).setOrigin(0.5)
+          const roof = scene.add.rectangle(0, 10, 90, 100, color).setOrigin(0.5)
+          roof.setStrokeStyle(4, 0x000000, 0.1)
+
+          // Windows
+          const windshield = scene.add.rectangle(0, -35, 80, 25, 0x223344).setOrigin(0.5)
+          const rearWindow = scene.add.rectangle(0, 55, 80, 15, 0x223344).setOrigin(0.5)
+          
+          // Lights
+          const headL = scene.add.rectangle(-40, -90, 20, 10, 0xffffaa).setOrigin(0.5)
+          const headR = scene.add.rectangle(40, -90, 20, 10, 0xffffaa).setOrigin(0.5)
+          const tailL = scene.add.rectangle(-40, 92, 25, 8, 0xaa0000).setOrigin(0.5)
+          const tailR = scene.add.rectangle(40, 92, 25, 8, 0xaa0000).setOrigin(0.5)
+
+          if (isPlayer) {
+             // Add a subtle stripe or detail for the player
+             const stripe = scene.add.rectangle(0, 0, 10, 190, 0xffffff, 0.2).setOrigin(0.5)
+             container.add([shadow, w1, w2, w3, w4, body, stripe, roof, windshield, rearWindow, headL, headR, tailL, tailR])
+          } else {
+             container.add([shadow, w1, w2, w3, w4, body, roof, windshield, rearWindow, headL, headR, tailL, tailR])
+          }
+          
+          return container
         }
 
         // --- PLAYER ---
         const player = this.add.rectangle(lanes[currentLane], 1000, 110, 190, 0x00ff00, 0).setDepth(DEPTH.PLAYER)
         this.physics.add.existing(player)
-        
-        const carBody = this.add.rectangle(0, 0, 115, 200, 0x00ff44).setOrigin(0.5)
-        const carHood = this.add.rectangle(0, -55, 105, 80, 0x00cc33).setOrigin(0.5)
-        const carWind = this.add.rectangle(0, -15, 95, 32, 0xaaddff).setOrigin(0.5)
-        const playerVisuals = this.add.container(0, 0, [carBody, carHood, carWind]).setDepth(DEPTH.PLAYER)
+        const playerVisuals = createCarContainer(this, 0x22ee66, true).setDepth(DEPTH.PLAYER)
 
         // --- OBSTACLES GROUP ---
         const obstacles = this.physics.add.group()
@@ -81,12 +129,32 @@ export const createGame = async (
           const lane = Phaser.Math.Between(0, 2)
           const isTruck = Phaser.Math.Between(0, 10) > 7
           const x = lanes[lane]
-          const y = -250
+          const y = -300
           
-          const obs = this.add.rectangle(x, y, 110, isTruck ? 300 : 200, isTruck ? 0xff8800 : 0xff3333).setDepth(DEPTH.OBSTACLES)
+          const obsColor = isTruck ? 0xcc7722 : [0x3366ff, 0xcc3333, 0x777777, 0xeeeeee][Phaser.Math.Between(0, 3)]
+          const obs = this.add.rectangle(x, y, 110, isTruck ? 320 : 190, 0xffffff, 0).setDepth(DEPTH.OBSTACLES)
           this.physics.add.existing(obs)
-          obs.body.setVelocityY(config.speed * 2.5) 
+          
+          let visual: any
+          if (isTruck) {
+            visual = this.add.container(0, 0)
+            const shadow = this.add.rectangle(6, 6, 120, 320, 0x000000, 0.3).setOrigin(0.5)
+            const trailer = this.add.rectangle(0, 40, 110, 240, obsColor).setOrigin(0.5)
+            const cab = this.add.rectangle(0, -110, 100, 80, obsColor).setOrigin(0.5)
+            const wind = this.add.rectangle(0, -125, 85, 20, 0x223344).setOrigin(0.5)
+            const lightL = this.add.rectangle(-35, -145, 20, 10, 0xffffaa).setOrigin(0.5)
+            const lightR = this.add.rectangle(35, -145, 20, 10, 0xffffaa).setOrigin(0.5)
+            visual.add([shadow, trailer, cab, wind, lightL, lightR])
+          } else {
+            visual = createCarContainer(this, obsColor)
+          }
+          
+          visual.setDepth(DEPTH.OBSTACLES)
           obstacles.add(obs)
+          
+          // Custom property to update visual position
+          obs.setData('visual', visual)
+          obs.body.setVelocityY(config.speed * 2.5) 
         }
 
         this.time.addEvent({
@@ -100,7 +168,7 @@ export const createGame = async (
           if (isLevelEnding || isGameOver) return
           if (direction === 'left') currentLane = Math.max(0, currentLane - 1)
           else currentLane = Math.min(2, currentLane + 1)
-          this.tweens.add({ targets: player, x: lanes[currentLane], duration: 120, ease: 'Power2' })
+          this.tweens.add({ targets: player, x: lanes[currentLane], duration: 150, ease: 'Cubic.easeOut' })
         }
 
         this.input.keyboard.on('keydown-LEFT', () => movePlayer('left'))
@@ -113,9 +181,20 @@ export const createGame = async (
         this.events.on('update', () => {
           if (isGameOver) return
           playerVisuals.setPosition(player.x, player.y)
+          
           const scrollSpeed = (isLevelEnding ? config.speed / 8 : config.speed / 25)
-          roadLines.getChildren().forEach((line: any) => { line.y += scrollSpeed; if (line.y > 1200) line.y = -120 })
-          curbs.getChildren().forEach((curb: any) => { curb.y += scrollSpeed; if (curb.y > 1200) curb.y = -80 })
+          roadLines.getChildren().forEach((line: any) => { line.y += scrollSpeed; if (line.y > 1200) line.y = -100 })
+          curbs.getChildren().forEach((curb: any) => { curb.y += scrollSpeed; if (curb.y > 1200) curb.y = -40 })
+          trees.getChildren().forEach((tree: any) => { tree.y += scrollSpeed * 0.8; if (tree.y > 1300) { tree.y = -100; tree.x = Math.random() > 0.5 ? 40 : 760 } })
+
+          obstacles.getChildren().forEach((obs: any) => {
+            const visual = obs.getData('visual')
+            if (visual) visual.setPosition(obs.x, obs.y)
+            if (obs.y > 1500) {
+              if (visual) visual.destroy()
+              obs.destroy()
+            }
+          })
 
           if (score >= config.targetScore && !isLevelEnding) {
             isLevelEnding = true
@@ -123,17 +202,25 @@ export const createGame = async (
             this.cameras.main.flash(500, 255, 255, 255)
             this.tweens.add({ targets: [player, playerVisuals], y: -500, duration: 1500, ease: 'Power2.easeIn', onComplete: () => onLevelComplete(score) })
           }
-          obstacles.getChildren().forEach((obs: any) => { if (obs.y > 1500) obs.destroy() })
         })
 
         // --- COLLISIONS ---
-        this.physics.add.overlap(player, obstacles, () => {
+        this.physics.add.overlap(player, obstacles, (p: any, o: any) => {
           if (isLevelEnding || isGameOver) return
           isGameOver = true
           this.physics.pause()
           this.cameras.main.shake(300, 0.05)
           this.cameras.main.flash(200, 255, 0, 0)
-          this.time.delayedCall(500, () => onGameOver(score))
+          
+          // Explosion effect
+          for (let i = 0; i < 15; i++) {
+            const part = this.add.rectangle(player.x, player.y, 20, 20, 0xffaa00).setDepth(DEPTH.PLAYER + 1)
+            this.physics.add.existing(part)
+            part.body.setVelocity(Phaser.Math.Between(-400, 400), Phaser.Math.Between(-400, 400))
+            this.tweens.add({ targets: part, alpha: 0, scale: 2, duration: 800, onComplete: () => part.destroy() })
+          }
+
+          this.time.delayedCall(800, () => onGameOver(score))
         })
 
         // --- SCORE TIMER ---

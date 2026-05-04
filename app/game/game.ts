@@ -27,6 +27,7 @@ export const createGame = async (
       }
     },
     scene: {
+      key: 'MainScene',
       create(this: any) {
         let score = 0
         let isGameOver = false

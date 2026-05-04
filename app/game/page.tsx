@@ -20,6 +20,9 @@ export default function GamePage() {
   const [showGameOverModal, setShowGameOverModal] = useState(false)
   const [showLevelSelector, setShowLevelSelector] = useState(false)
 
+  const [gameStarted, setGameStarted] = useState(false)
+  const [gamePaused, setGamePaused] = useState(false)
+
   const currentConfig = session.current.getConfig()
   const queueStatus = getMockQueueStatus(queueProgress)
   const levelProgress = Math.min((score / currentConfig.targetScore) * 100, 100)
@@ -36,6 +39,8 @@ export default function GamePage() {
     }
 
     const config = session.current.getConfig()
+    setGameStarted(true)
+    setGamePaused(false)
     
     setTimeout(async () => {
       gameRef.current = await createGame(
@@ -54,6 +59,18 @@ export default function GamePage() {
         }
       )
     }, 100)
+  }
+
+  const togglePause = () => {
+    if (!gameRef.current) return
+    const sceneManager = gameRef.current.scene
+    if (gamePaused) {
+      sceneManager.resume('MainScene')
+      setGamePaused(false)
+    } else {
+      sceneManager.pause('MainScene')
+      setGamePaused(true)
+    }
   }
 
   const handleNextLevel = () => {
@@ -97,10 +114,6 @@ export default function GamePage() {
     setUnlockedLevels(session.current.unlockedLevels)
     setLevel(session.current.level)
     
-    if (initialized.current) return
-    initialized.current = true
-    initGame()
-
     return () => {
       if (gameRef.current) gameRef.current.destroy(true)
     }
@@ -120,6 +133,29 @@ export default function GamePage() {
         </div>
 
         <div className="flex gap-4 md:gap-8 items-center">
+          {gameStarted && (
+            <button 
+              onClick={togglePause}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all active:scale-95 font-bold uppercase text-[10px] ${
+                gamePaused 
+                  ? 'bg-green-500/20 border-green-500 text-green-400 hover:bg-green-500/30' 
+                  : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:bg-zinc-700'
+              }`}
+            >
+              {gamePaused ? (
+                <>
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  Riprendi
+                </>
+              ) : (
+                <>
+                  <span className="w-2 h-2 bg-zinc-500 rounded-full" />
+                  Pausa
+                </>
+              )}
+            </button>
+          )}
+
           <button 
             onClick={() => {
               setUnlockedLevels(session.current.unlockedLevels)
@@ -178,6 +214,32 @@ export default function GamePage() {
              <div id="game-container" className="h-full w-full bg-[#0a0a0a]" />
 
           {/* OVERLAYS */}
+          {!gameStarted && (
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-40 p-8 rounded-[3rem]">
+              <div className="bg-zinc-900 border border-green-500/30 p-10 rounded-[3rem] text-center shadow-2xl max-w-sm w-full animate-in zoom-in duration-300">
+                <div className="w-20 h-20 bg-green-500 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-12 shadow-[0_0_30px_rgba(34,197,94,0.3)]">
+                  <svg className="w-12 h-12 text-black ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                </div>
+                <h3 className="text-3xl font-black text-white mb-2 uppercase italic tracking-tighter">PRONTO?</h3>
+                <p className="text-zinc-500 text-xs uppercase font-bold mb-10 tracking-widest">Evita il traffico e raggiungi il desk!</p>
+                <button onClick={() => initGame()} className="w-full bg-green-500 hover:bg-green-400 text-black py-5 rounded-[2rem] font-black transition-all active:scale-95 uppercase text-xl tracking-tighter shadow-lg shadow-green-500/20">Inizia Gioco</button>
+              </div>
+            </div>
+          )}
+
+          {gamePaused && (
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-md flex items-center justify-center z-40 p-8 rounded-[3rem]">
+              <div className="bg-zinc-900 border border-zinc-700 p-10 rounded-[3rem] text-center shadow-2xl max-w-sm w-full animate-in zoom-in duration-200">
+                <div className="w-20 h-20 bg-zinc-800 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+                  <svg className="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+                </div>
+                <h3 className="text-3xl font-black text-white mb-2 uppercase italic tracking-tighter">IN PAUSA</h3>
+                <p className="text-zinc-500 text-xs uppercase font-bold mb-10 tracking-widest">Il tempo è fermo, riprendi quando vuoi.</p>
+                <button onClick={togglePause} className="w-full bg-white hover:bg-zinc-200 text-black py-5 rounded-[2rem] font-black transition-all active:scale-95 uppercase text-xl tracking-tighter">Riprendi</button>
+              </div>
+            </div>
+          )}
+
           {showGameOverModal && (
             <div className="absolute inset-0 bg-red-500/20 backdrop-blur-md flex items-center justify-center z-40 p-8 rounded-[3rem]">
               <div className="bg-zinc-900 border border-red-500/30 p-8 rounded-[2.5rem] text-center shadow-2xl max-w-sm w-full animate-in zoom-in duration-300">

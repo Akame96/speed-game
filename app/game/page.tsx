@@ -175,7 +175,7 @@ export default function GamePage() {
 
         {/* GAME AREA */}
         <div className="flex-1 min-h-0 flex items-center justify-center relative bg-zinc-900/30 rounded-[3rem] border border-zinc-800/50 shadow-inner">
-          <div className="h-full w-full max-w-[450px] flex items-center justify-center p-4">
+          <div className="h-full w-full max-w-[1000px] flex items-center justify-center p-4">
              <div id="game-container" className="h-full w-full rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.6)] border-4 border-zinc-800 bg-[#1a1a1a]" />
           </div>
 
@@ -253,4 +253,4 @@ export default function GamePage() {
       )}
     </div>
   )
-} 
+}

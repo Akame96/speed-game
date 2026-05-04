@@ -11,8 +11,8 @@ export const createGame = async (
 
   return new Phaser.Game({
     type: Phaser.AUTO,
-    width: 300,
-    height: 500,
+    width: 800,
+    height: 1200,
     parent: containerId,
     backgroundColor: '#1a1a1a',
     scale: {
@@ -31,7 +31,7 @@ export const createGame = async (
         let score = 0
         let isGameOver = false
         let isLevelEnding = false
-        const lanes = [75, 150, 225]
+        const lanes = [200, 400, 600]
         let currentLane = 1
 
         const DEPTH = {
@@ -43,33 +43,33 @@ export const createGame = async (
         }
 
         // --- BACKGROUND ---
-        this.add.rectangle(0, 0, 40, 500, 0x2d5a27).setOrigin(0).setDepth(DEPTH.GRASS)
-        this.add.rectangle(260, 0, 40, 500, 0x2d5a27).setOrigin(0).setDepth(DEPTH.GRASS)
+        this.add.rectangle(0, 0, 100, 1200, 0x2d5a27).setOrigin(0).setDepth(DEPTH.GRASS)
+        this.add.rectangle(700, 0, 100, 1200, 0x2d5a27).setOrigin(0).setDepth(DEPTH.GRASS)
         
         const curbs = this.add.group()
         for (let i = 0; i < 20; i++) {
           const color = i % 2 === 0 ? 0xffffff : 0xff0000
-          curbs.add(this.add.rectangle(35, i * 30, 10, 30, color).setOrigin(0.5).setDepth(DEPTH.ROAD))
-          curbs.add(this.add.rectangle(265, i * 30, 10, 30, color).setOrigin(0.5).setDepth(DEPTH.ROAD))
+          curbs.add(this.add.rectangle(90, i * 80, 25, 80, color).setOrigin(0.5).setDepth(DEPTH.ROAD))
+          curbs.add(this.add.rectangle(710, i * 80, 25, 80, color).setOrigin(0.5).setDepth(DEPTH.ROAD))
         }
 
-        this.add.rectangle(150, 250, 220, 500, 0x333333).setDepth(DEPTH.ROAD)
+        this.add.rectangle(400, 600, 600, 1200, 0x333333).setDepth(DEPTH.ROAD)
 
         const roadLines = this.add.group()
         for (let i = 0; i < 12; i++) {
-          const l1 = this.add.rectangle(112, i * 50, 4, 25, 0xffffff, 0.4).setDepth(DEPTH.LINES)
-          const l2 = this.add.rectangle(187, i * 50, 4, 25, 0xffffff, 0.4).setDepth(DEPTH.LINES)
+          const l1 = this.add.rectangle(300, i * 120, 10, 60, 0xffffff, 0.4).setDepth(DEPTH.LINES)
+          const l2 = this.add.rectangle(500, i * 120, 10, 60, 0xffffff, 0.4).setDepth(DEPTH.LINES)
           roadLines.add(l1)
           roadLines.add(l2)
         }
 
         // --- PLAYER ---
-        const player = this.add.rectangle(lanes[currentLane], 420, 40, 70, 0x00ff00, 0).setDepth(DEPTH.PLAYER)
+        const player = this.add.rectangle(lanes[currentLane], 1000, 110, 190, 0x00ff00, 0).setDepth(DEPTH.PLAYER)
         this.physics.add.existing(player)
         
-        const carBody = this.add.rectangle(0, 0, 42, 75, 0x00ff44).setOrigin(0.5)
-        const carHood = this.add.rectangle(0, -20, 38, 30, 0x00cc33).setOrigin(0.5)
-        const carWind = this.add.rectangle(0, -5, 34, 12, 0xaaddff).setOrigin(0.5)
+        const carBody = this.add.rectangle(0, 0, 115, 200, 0x00ff44).setOrigin(0.5)
+        const carHood = this.add.rectangle(0, -55, 105, 80, 0x00cc33).setOrigin(0.5)
+        const carWind = this.add.rectangle(0, -15, 95, 32, 0xaaddff).setOrigin(0.5)
         const playerVisuals = this.add.container(0, 0, [carBody, carHood, carWind]).setDepth(DEPTH.PLAYER)
 
         // --- OBSTACLES GROUP ---
@@ -81,11 +81,11 @@ export const createGame = async (
           const lane = Phaser.Math.Between(0, 2)
           const isTruck = Phaser.Math.Between(0, 10) > 7
           const x = lanes[lane]
-          const y = -100
+          const y = -250
           
-          const obs = this.add.rectangle(x, y, 40, isTruck ? 110 : 75, isTruck ? 0xff8800 : 0xff3333).setDepth(DEPTH.OBSTACLES)
+          const obs = this.add.rectangle(x, y, 110, isTruck ? 300 : 200, isTruck ? 0xff8800 : 0xff3333).setDepth(DEPTH.OBSTACLES)
           this.physics.add.existing(obs)
-          obs.body.setVelocityY(config.speed)
+          obs.body.setVelocityY(config.speed * 2.5) 
           obstacles.add(obs)
         }
 
@@ -107,23 +107,23 @@ export const createGame = async (
         this.input.keyboard.on('keydown-RIGHT', () => movePlayer('right'))
         this.input.keyboard.on('keydown-A', () => movePlayer('left'))
         this.input.keyboard.on('keydown-D', () => movePlayer('right'))
-        this.input.on('pointerdown', (p: any) => p.x < 150 ? movePlayer('left') : movePlayer('right'))
+        this.input.on('pointerdown', (p: any) => p.x < 400 ? movePlayer('left') : movePlayer('right'))
 
         // --- UPDATE LOOP ---
         this.events.on('update', () => {
           if (isGameOver) return
           playerVisuals.setPosition(player.x, player.y)
-          const scrollSpeed = isLevelEnding ? config.speed / 20 : config.speed / 60
-          roadLines.getChildren().forEach((line: any) => { line.y += scrollSpeed; if (line.y > 500) line.y = -50 })
-          curbs.getChildren().forEach((curb: any) => { curb.y += scrollSpeed; if (curb.y > 500) curb.y = -30 })
+          const scrollSpeed = (isLevelEnding ? config.speed / 8 : config.speed / 25)
+          roadLines.getChildren().forEach((line: any) => { line.y += scrollSpeed; if (line.y > 1200) line.y = -120 })
+          curbs.getChildren().forEach((curb: any) => { curb.y += scrollSpeed; if (curb.y > 1200) curb.y = -80 })
 
           if (score >= config.targetScore && !isLevelEnding) {
             isLevelEnding = true
             this.physics.pause()
             this.cameras.main.flash(500, 255, 255, 255)
-            this.tweens.add({ targets: [player, playerVisuals], y: -200, duration: 1500, ease: 'Power2.easeIn', onComplete: () => onLevelComplete(score) })
+            this.tweens.add({ targets: [player, playerVisuals], y: -500, duration: 1500, ease: 'Power2.easeIn', onComplete: () => onLevelComplete(score) })
           }
-          obstacles.getChildren().forEach((obs: any) => { if (obs.y > 600) obs.destroy() })
+          obstacles.getChildren().forEach((obs: any) => { if (obs.y > 1500) obs.destroy() })
         })
 
         // --- COLLISIONS ---
